@@ -130,17 +130,21 @@ namespace embeddedSQL421
                 DeptChair Varchar(100) Not Null,
 				DeptMembers int,
 
-				CONSTRAINT PK_Department_DeptCode Primary Key NONCLUSTERED (DeptCode),
+				CONSTRAINT PK_Department_DeptCode Primary Key NONCLUSTERED (DeptCode) ,
+
+                --Completing Deptartment name constraint where name must include 'Department'
+                CONSTRAINT DepartmentNameConstraint CHECK(DeptName like '%Department%')
             );
 
             CREATE TABLE Major
             (
-                MajorCode Varchar(3) Not Null,
+                --(1/2)Completing Major code 3 character constraint
+                MajorCode char(3) Not Null,
 				DeptCode Varchar(3) Not Null,
 				
-                CONSTRAINT PK_Major_MajorCode PRIMARY KEY NONCLUSTERED (MajorCode),
+                CONSTRAINT PK_Major_MajorCode PRIMARY KEY NONCLUSTERED (MajorCode) ,
 
-                CONSTRAINT FK_Major_DeptCode FOREIGN KEY (DeptCode) REFERENCES Department
+                CONSTRAINT FK_Major_DeptCode FOREIGN KEY (DeptCode) REFERENCES Department (DeptCode) on UPDATE CASCADE ON DELETE No ACTION
             );
 
             CREATE TABLE Student
@@ -150,7 +154,10 @@ namespace embeddedSQL421
                 StudentLastName VARCHAR(25),
                 StudentInitials VARCHAR (3),
 
-                CONSTRAINT PK_Student_StudentID PRIMARY KEY NONCLUSTERED (StudentID),
+                CONSTRAINT PK_Student_StudentID PRIMARY KEY NONCLUSTERED (StudentID) ,
+
+                --completing student initial (length > 1) constraint
+                CONSTRAINT MinStudentInitialsLengthConstraint CHECK (DATALENGTH(StudentInitials) > 1)
             );
 
             CREATE TABLE Event
@@ -160,7 +167,15 @@ namespace embeddedSQL421
                 StartDate DATE,
                 EndDate DATE,
 
-                CONSTRAINT PK_Event_EventID PRIMARY KEY NONCLUSTERED (EventID)
+                CONSTRAINT PK_Event_EventID PRIMARY KEY NONCLUSTERED (EventID) ,
+
+                --Completing constraints where startdate and enddate cannot be in the past
+                CONSTRAINT StartDate CHECK (StartDate > GetDate() ),
+                CONSTRAINT EndDateDate CHECK (EndDate > GetDate() ),
+
+                --Completing constraint where Startdate must be less than enddate
+                CONSTRAINT StartDateBeforeEndDate CHECK (StartDate < EndDate)
+
             );
 
             CREATE TABLE EventAttendant
@@ -168,21 +183,22 @@ namespace embeddedSQL421
                 EventID VARCHAR(5) Not Null,
                 StudentID VARCHAR(50) Not Null,
 
-                CONSTRAINT PK_EventAttendant_EventID_AND_STUDENTID PRIMARY KEY NONCLUSTERED (EventID, StudentID),
+                CONSTRAINT PK_EventAttendant_EventID_AND_STUDENTID PRIMARY KEY NONCLUSTERED (EventID, StudentID) ,
 
-                CONSTRAINT FK_EventAttendant_EventID FOREIGN KEY (EventID) REFERENCES Event,
-                CONSTRAINT FK_EventAttendant_StudentID FOREIGN KEY (StudentID) REFERENCES Student 
+                CONSTRAINT FK_EventAttendant_EventID FOREIGN KEY (EventID) REFERENCES Event (EventID) on UPDATE CASCADE ON DELETE No ACTION,
+                CONSTRAINT FK_EventAttendant_StudentID FOREIGN KEY (StudentID) REFERENCES Student (StudentID) on UPDATE CASCADE ON DELETE No ACTION
             );
 
             CREATE TABLE DeclaredMajor
             (
                 StudentID VARCHAR(50) Not Null,
-                MajorCode VARCHAR(3) Not Null,
+                --(2/2)Completing Major code 3 character constraint
+                MajorCode CHAR(3) Not Null,
 
-                CONSTRAINT PK_DeclaredMajor_MajorCode PRIMARY KEY NONCLUSTERED (MajorCode, StudentID),
+                CONSTRAINT PK_DeclaredMajor_MajorCode PRIMARY KEY NONCLUSTERED (MajorCode, StudentID) ,
 
-                CONSTRAINT FK_DeclaredMajor_StudentID FOREIGN KEY (StudentID) REFERENCES Student ,
-                CONSTRAINT  FK_DeclaredMajor_MajorCode FOREIGN Key (MajorCode) REFERENCES Major
+                CONSTRAINT FK_DeclaredMajor_StudentID FOREIGN KEY (StudentID) REFERENCES Student (StudentID) on UPDATE CASCADE ON DELETE No ACTION,
+                CONSTRAINT  FK_DeclaredMajor_MajorCode FOREIGN Key (MajorCode) REFERENCES Major (MajorCode) on UPDATE CASCADE ON DELETE No ACTION
             );
 
             CREATE TABLE EventHost
@@ -190,11 +206,12 @@ namespace embeddedSQL421
                 EventID VARCHAR(5) Not Null,
                 DeptCode VarChar(3) Not Null ,
 
-                CONSTRAINT PK_EventHost_EventID_And_DeptCode PRIMARY KEY NONCLUSTERED (EventID, DeptCode),
+                CONSTRAINT PK_EventHost_EventID_And_DeptCode PRIMARY KEY NONCLUSTERED (EventID, DeptCode) ,
 
-                CONSTRAINT FK_EventHost_EventID FOREIGN KEY (EventID) REFERENCES Event,
-                CONSTRAINT FK_EventHost_DeptCode FOREIGN KEY (DeptCode) REFERENCES Department 
+                CONSTRAINT FK_EventHost_EventID FOREIGN KEY (EventID) REFERENCES Event (EventID) on UPDATE CASCADE ON DELETE No ACTION,
+                CONSTRAINT FK_EventHost_DeptCode FOREIGN KEY (DeptCode) REFERENCES Department (DeptCode) on UPDATE CASCADE ON DELETE No ACTION
             );
+            
             ";
         }
 
