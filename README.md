@@ -1,6 +1,6 @@
 # Redwood-University
 
-## Our Use Case
+## Our Case Study
 
 Database implementation for Redwood University 
 
@@ -22,7 +22,7 @@ Each department has the possibility of hosting events, and an event can be (coll
 <li> Event</li>
   </ul>
   
-### main relationship types between the entity types and multiplicity constraints for each relationship identified 
+### Main Relationship Types Between the Entity Types & Multiplicity Constraints for Each Relationship Identified 
 
 | Entity Name |	Multiplicity |	Relationship |	Multiplicity | 	Entity Name |
 |------|------|------|------|------|
@@ -33,13 +33,13 @@ Each department has the possibility of hosting events, and an event can be (coll
 | Student |	1..* |	Attends |	1..* |	Event |
 •	assuming all departments have at least one major 
 
-### attributes associated with entity or relationship types 
+### Attributes Associated with Antity or Relationship Types 
 Department Attribute (DeptCode, DeptName, DeptChair, DeptMembers)
 Major Attribute (MajorCode, MajorName)
 Student Attribute (StudentID, StudentName, StudentInitials) 
 Event Attribute (EventID, StartDate, EndDate) 
 
-### candidate and primary key attributes for each (strong) entity type  
+### Candidate & Primary Key Attributes for Each (strong) Entity Type  
 
 •	Department (DeptCode, DeptName, DeptChair, DeptMembers) DeptCode, DeptName and DeptCode will be our candidate keys and DeptCode will be our  primary key because of its ability to more accurately identify the tuple when compared to DeptChair, while also being a more succinct way to query our table when compared to  DeptName. 
 
@@ -58,7 +58,8 @@ Event Attribute (EventID, StartDate, EndDate)
 ---
 
 ## Conceptual ER Diagram
-![image](https://user-images.githubusercontent.com/46760723/145520763-f5a601c6-107c-4491-b56d-0dbf2db98cfb.png)
+<img width="1016" alt="Screen Shot 2021-12-10 at 8 23 22 AM" src="https://user-images.githubusercontent.com/46760723/145580755-7bc2dd53-4443-4cb8-9cc0-0185c3d66dda.png">
+
 
 # Logical Model
 
@@ -166,6 +167,6 @@ In the Event table, start date must be before end date.
 - Events must start and end in the future, not today or the past
 </ol>
 
-### logical model ER diagram
+### Logical Model ER Diagram
 
 ![image](https://user-images.githubusercontent.com/46760723/145521780-d8573219-85c1-4225-ae7f-63678ce80318.png)
