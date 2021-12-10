@@ -13,32 +13,41 @@ namespace embeddedSQL421
             //---------------------------
             try
             {    
-                SqlConnectionStringBuilder builder =
-                        new SqlConnectionStringBuilder();
+                SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();
 
                 builder.DataSource = "421db.database.windows.net";
                 builder.UserID = "redwoodAdmin";
                 builder.Password = "Adminadmin1";
                 builder.InitialCatalog = "RedwoodUniversityDB";
 
-                using (var connection =
-                    new SqlConnection(builder.ConnectionString))
+                using (var connection = new SqlConnection(builder.ConnectionString))
                 {
                     //-------------------------------------------------
                     //Connecting to AzureDB instance 
                     //-------------------------------------------------
-                    connection.Open();
+                    
+                    Submit_Tsql_NonQuery
+                        (connection, "Creating Table", Build_Tsql_CreateTables());
 
                     Submit_Tsql_NonQuery
-                        (connection, "2 - Create-Tables",
-                        Build_Tsql_CreateTables());
+                        (connection, "Inserting Rows", Build_Tsql_Inserts());
 
-                    Submit_Tsql_NonQuery
-                        (connection, "3 - Inserts", Build_Tsql_Inserts());
+                    //1
+                    Tsql_SelectEventAttendees(connection);
 
-                    Tsql_Select(connection);
+                    //2
+                    Tsql_SelectDeclaredMajors(connection);
 
-                    connection.Close();
+                    //3
+                    Tsql_SelectCookoutHost(connection);
+
+                    //4
+                    Tsql_SelectGeoDeptChair(connection);
+
+                    //5
+                    Tsql_SelectEventInfo(connection);
+
+
                     Console.ReadLine();
                     //-------------------------------------------------
                     //Closing Connection
@@ -53,30 +62,106 @@ namespace embeddedSQL421
                 Console.WriteLine(e.ToString());
             }
         }
+
+        private static void Tsql_SelectCookoutHost(SqlConnection connection)
+        {
+            Console.WriteLine("=================================");
+
+            using (var command = new SqlCommand(Tsql_CookoutHost(), connection))
+            {
+                connection.Open();
+                SqlDataReader reader = command.ExecuteReader();
+                Console.WriteLine("Who Hosted the Cookout?");
+                Console.WriteLine("-----------------------------");
+                while (reader.Read())
+                {
+
+                    Console.WriteLine("{0}", reader.GetString(0));
+                }
+                connection.Close();
+            }
+        }
+
+        private static void Tsql_SelectEventInfo(SqlConnection connection)
+        {
+            Console.WriteLine("=================================");
+
+            using (var command = new SqlCommand(Tsql_EventInfo(), connection))
+            {
+                connection.Open();
+                SqlDataReader reader = command.ExecuteReader();
+                Console.WriteLine("EventName\tStartDate\tEndDate");
+                Console.WriteLine("---------------------------------");
+                while (reader.Read())
+                {
+
+                    Console.WriteLine("{0}\t\t{1}\t\t{2}", reader.GetString(0),
+                        reader.GetDateTime(1), reader.GetDateTime(2));
+                }
+                connection.Close();
+            }
+        }
+
+        private static void Tsql_SelectGeoDeptChair(SqlConnection connection)
+        {
+            Console.WriteLine("=================================");
+
+
+            using (var command = new SqlCommand(Tsql_GeoDeptChair(), connection))
+            {
+                connection.Open();
+                SqlDataReader reader = command.ExecuteReader();
+                Console.WriteLine("Who is the Geology Department Chair?");
+                Console.WriteLine("-----------------------------");
+                while (reader.Read())
+                {
+
+                    Console.WriteLine("{0}", reader.GetString(0));
+                }
+                connection.Close();
+            }
+        }
+
         //----------------------------------------------------------------------
 
-        private static void Tsql_Select(SqlConnection connection)
+        private static void Tsql_SelectDeclaredMajors(SqlConnection connection)
         {
-            Console.WriteLine();
             Console.WriteLine("=================================");
-            Console.WriteLine("Now, SelectEmployees (6)...");
 
-            string tsql = Build_Tsql_Select();
-
-            using (var command = new SqlCommand(tsql, connection))
+            using (var command = new SqlCommand(TSQL_ShowDeclaredMajors(), connection))
             {
-                using (SqlDataReader reader = command.ExecuteReader())
-                {
+                connection.Open();
+                SqlDataReader reader = command.ExecuteReader();
+                Console.WriteLine("Show who declared what major\nMajorCode\t\tStudentFirstName");
+                Console.WriteLine("-----------------------------");
                     while (reader.Read())
                     {
-                        Console.WriteLine("{0} , {1} , {2} , {3} , {4}",
-                            reader.GetGuid(0),
-                            reader.GetString(1),
-                            reader.GetInt32(2),
-                            (reader.IsDBNull(3)) ? "NULL" : reader.GetString(3),
-                            (reader.IsDBNull(4)) ? "NULL" : reader.GetString(4));
+                        Console.WriteLine("{0}\t\t{1}",
+                        reader.GetString(0),
+                        reader.GetString(1));
                     }
-                }
+                connection.Close();
+            }
+        }
+        private static void Tsql_SelectEventAttendees(SqlConnection connection)
+        {
+            Console.WriteLine("=================================");
+
+            string tsql = Tsql_EventAttendees();
+
+            using (var command = new SqlCommand(Tsql_EventAttendees(), connection))
+            {
+                connection.Open();
+                SqlDataReader reader = command.ExecuteReader();
+                Console.WriteLine("Show who attended what event\nEventName\t\tStudentFirstName");
+                Console.WriteLine("-----------------------------");
+                while (reader.Read())
+                    {
+                        
+                        Console.WriteLine("{0}\t\t{1}", reader.GetString(0),
+                            reader.GetString(1));
+                    }
+                connection.Close();
             }
         }
         private static void Submit_Tsql_NonQuery(SqlConnection connection,
@@ -85,21 +170,21 @@ namespace embeddedSQL421
                                                     string parameterName = null,
                                                     string parameterValue = null)
         {
-            Console.WriteLine();
             Console.WriteLine("=================================");
-            Console.WriteLine("T-SQL to {0}...", tsqlPurpose);
+            Console.WriteLine("{0}...", tsqlPurpose);
 
             using (var command = new SqlCommand(tsqlSourceCode, connection))
             {
+                connection.Open();
                 if (parameterName != null)
                 {
-                    // Or, use SqlParameter class.
                     command.Parameters.AddWithValue(  
                         parameterName,
                         parameterValue);
                 }
                 int rowsAffected = command.ExecuteNonQuery();
                 Console.WriteLine(rowsAffected + " = rows affected.");
+                connection.Close();
             }
 
         }
@@ -111,7 +196,7 @@ namespace embeddedSQL421
         //
         //-------------------------------------------------------------
 
-        //CREATING ALL TABLES
+        //CREATING ALL TABLES---------------------------------------------------
         private static string Build_Tsql_CreateTables()
         {
             return @"
@@ -141,6 +226,7 @@ namespace embeddedSQL421
                 --(1/2)Completing Major code 3 character constraint
                 MajorCode char(3) Not Null,
 				DeptCode Varchar(3) Not Null,
+                MajorName Varchar(50) Not Null
 				
                 CONSTRAINT PK_Major_MajorCode PRIMARY KEY NONCLUSTERED (MajorCode) ,
 
@@ -170,7 +256,7 @@ namespace embeddedSQL421
                 CONSTRAINT PK_Event_EventID PRIMARY KEY NONCLUSTERED (EventID) ,
 
                 --Completing constraints where startdate and enddate cannot be in the past
-                CONSTRAINT StartDate CHECK (StartDate > GetDate() ),
+                CONSTRAINT StartDate CHECK (StartDate >= GetDate() ),
                 CONSTRAINT EndDateDate CHECK (EndDate > GetDate() ),
 
                 --Completing constraint where Startdate must be less than enddate
@@ -185,19 +271,20 @@ namespace embeddedSQL421
 
                 CONSTRAINT PK_EventAttendant_EventID_AND_STUDENTID PRIMARY KEY NONCLUSTERED (EventID, StudentID) ,
 
-                CONSTRAINT FK_EventAttendant_EventID FOREIGN KEY (EventID) REFERENCES Event (EventID) on UPDATE CASCADE ON DELETE No ACTION,
-                CONSTRAINT FK_EventAttendant_StudentID FOREIGN KEY (StudentID) REFERENCES Student (StudentID) on UPDATE CASCADE ON DELETE No ACTION
+                CONSTRAINT FK_EventAttendant_EventID FOREIGN KEY (EventID) REFERENCES Event (EventID) on UPDATE CASCADE ON DELETE CASCADE,
+                CONSTRAINT FK_EventAttendant_StudentID FOREIGN KEY (StudentID) REFERENCES Student (StudentID) on UPDATE CASCADE ON DELETE CASCADE
             );
 
             CREATE TABLE DeclaredMajor
             (
-                StudentID VARCHAR(50) Not Null,
+                
                 --(2/2)Completing Major code 3 character constraint
                 MajorCode CHAR(3) Not Null,
+                StudentID VARCHAR(50) Not Null,
 
                 CONSTRAINT PK_DeclaredMajor_MajorCode PRIMARY KEY NONCLUSTERED (MajorCode, StudentID) ,
 
-                CONSTRAINT FK_DeclaredMajor_StudentID FOREIGN KEY (StudentID) REFERENCES Student (StudentID) on UPDATE CASCADE ON DELETE No ACTION,
+                CONSTRAINT FK_DeclaredMajor_StudentID FOREIGN KEY (StudentID) REFERENCES Student (StudentID) on UPDATE CASCADE ON DELETE CASCADE,
                 CONSTRAINT  FK_DeclaredMajor_MajorCode FOREIGN Key (MajorCode) REFERENCES Major (MajorCode) on UPDATE CASCADE ON DELETE No ACTION
             );
 
@@ -208,26 +295,116 @@ namespace embeddedSQL421
 
                 CONSTRAINT PK_EventHost_EventID_And_DeptCode PRIMARY KEY NONCLUSTERED (EventID, DeptCode) ,
 
-                CONSTRAINT FK_EventHost_EventID FOREIGN KEY (EventID) REFERENCES Event (EventID) on UPDATE CASCADE ON DELETE No ACTION,
+                CONSTRAINT FK_EventHost_EventID FOREIGN KEY (EventID) REFERENCES Event (EventID) on UPDATE CASCADE ON DELETE CASCADE,
                 CONSTRAINT FK_EventHost_DeptCode FOREIGN KEY (DeptCode) REFERENCES Department (DeptCode) on UPDATE CASCADE ON DELETE No ACTION
             );
             
             ";
         }
 
-        //INSERTING 5 
+        //INSERTING INTO TABLES-------------------------------------------------
+        //Writing initial data to do preliminary testing on create table statements
         private static string Build_Tsql_Inserts()
         {
+            
             return @"
+            INSERT INTO Department 
+            VALUES 
+            ('BIO', 'Biology Department', 'Pepe', 45),
+            ('CHM', 'Chemistry Department', 'Jose', 5),
+            ('GEO', 'Geology Department', 'John', 15),
+            ('ENG', 'English Department', 'Tim', 35),
+            ('FRL', 'Foreign Languages Department', 'Sosa', 15);
+            
+            INSERT INTO Major 
+            VALUES 
+            ('BIO', 'BIO', 'Biology'),
+            ('CHM', 'CHM', 'Chemistry'),
+            ('GEO', 'GEO', 'Geology'),
+            ('ENG', 'ENG', 'English'),
+            ('POR', 'FRL', 'Portuguese');
+            
+            INSERT INTO Student
+            VALUES 
+            ('12345','pepe','pepe','pp'),
+            ('54321','jose','jose','jj'),
+            ('23456','John','john','jj'),
+            ('65432','tim','tim','tt'),
+            ('98765','sosa','sosa','ss');
+            
+            INSERT INTO Event 
+            VALUES 
+            ('abc','Cookout',DATEADD(day, 1, GETDATE()), DATEADD(day, 7, GETDATE())),
+            ('rew','Reading',DATEADD(day, 1, GETDATE()), DATEADD(day, 3, GETDATE())),
+            ('wxx','Basketball Game',DATEADD(day, 1, GETDATE()), DATEADD(day, 3, GETDATE())),
+            ('tec','Fun Day',DATEADD(day, 1, GETDATE()), DATEADD(day, 2, GETDATE())),
+            ('nsm','Swimming',DATEADD(day, 1, GETDATE()), DATEADD(day, 5, GETDATE()));
+            
+            INSERT INTO EventAttendant
+            VALUES 
+            ('abc','12345'),
+            ('rew','54321'),
+            ('wxx','23456'),
+            ('tec','65432'),
+            ('nsm','98765');
+            
+            INSERT INTO DeclaredMajor 
+            VALUES 
+            ('BIO','12345'),
+            ('CHM','54321'),
+            ('ENG','23456'),
+            ('POR','65432'),
+            ('GEO','98765');
+            
+            INSERT INTO EventHost 
+            VALUES 
+            ('abc','BIO'),
+            ('rew','CHM'),
+            ('wxx','ENG'),
+            ('tec','FRL'),
+            ('nsm','GEO');
             
             ";
         }
 
-        private static string Build_Tsql_Select()
+        //5 SQL Queries against tables created----------------------------------
+        
+        private static string Tsql_EventInfo()
         {
-            return @"
-            
-        ";
+            return @"select eventname, startdate, enddate
+                    from event;";
+        }
+        private static string Tsql_GeoDeptChair()
+        {
+            return @"select deptchair from department where deptcode = 'GEO'";
+        }
+        private static string Tsql_CookoutHost()
+        {
+            return @"select d.deptname
+                    from department d
+                    join eventhost e
+                    on d.deptcode = e.deptcode
+                    join event j
+                    on e.eventid = j.eventid
+                    where eventname = 'cookout';";
+        }
+        private static string Tsql_EventAttendees()
+        {
+            return @"Select e.EventName,
+                            s.StudentFirstName,
+                            s.StudentLastName
+                     from EventAttendant j
+                            Join Event e
+                     on j.eventid = e.eventid
+                            Join Student s
+                            on s.studentid = j.studentid;";
+        }
+        private static string TSQL_ShowDeclaredMajors()
+        {
+            return @"select d.majorCode, s.studentFirstName
+                    from DeclaredMajor d
+                    Join student s
+                    on s.studentid = d.studentID;";
         }
 
         //-------------------------------------------------------------
